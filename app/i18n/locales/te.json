@@ -1,0 +1,12 @@
+{
+  "reminder.title": "రిమైండర్: $title",
+  "reminder.body": "$title తేదీ $event_date న ఉంది. $case_line$message",
+  "reminder.call": "నమస్కారం $name. ఇది $firm నుండి రిమైండర్. $title $event_date న నిర్ణయించబడింది. $case_line ధన్యవాదాలు.",
+  "reminder.case_line": "కేసు: $case_title. ",
+  "case.updated.title": "కేసు అప్‌డేట్: $case_title",
+  "case.updated.body": "$count మార్పులు గుర్తించబడ్డాయి: $summary",
+  "hearing.new.title": "తదుపరి విచారణ: $hearing_date",
+  "hearing.new.body": "$case_title తదుపరి విచారణ $hearing_date న జాబితా చేయబడింది.",
+  "otp.sms": "మీ Court Life లాగిన్ కోడ్ $code. ఇది $minutes నిమిషాల్లో ముగుస్తుంది. దీన్ని ఎవరితోనూ పంచుకోకండి.",
+  "call.test": "నమస్కారం $name. ఇది Court Life నుండి ఒక పరీక్ష కాల్. మీ విచారణ రిమైండర్‌లు ఇలాగే వినిపిస్తాయి. ధన్యవాదాలు."
+}

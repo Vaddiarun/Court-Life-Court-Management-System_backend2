@@ -1,0 +1,10 @@
+{
+  "reminder.title": "یاد دہانی: $title",
+  "reminder.body": "$title بتاریخ $event_date ہے۔ $case_line$message",
+  "reminder.call": "السلام علیکم $name۔ یہ $firm کی طرف سے یاد دہانی ہے۔ $title بتاریخ $event_date مقرر ہے۔ $case_line شکریہ۔",
+  "reminder.case_line": "مقدمہ: $case_title۔ ",
+  "case.updated.title": "مقدمے میں تبدیلی: $case_title",
+  "hearing.new.title": "اگلی سماعت: $hearing_date",
+  "otp.sms": "آپ کا Court Life لاگ ان کوڈ $code ہے۔ یہ $minutes منٹ میں ختم ہو جائے گا۔",
+  "call.test": "السلام علیکم $name۔ یہ Court Life کی طرف سے ایک ٹیسٹ کال ہے۔ آپ کی سماعت کی یاد دہانیاں اسی طرح سنائی دیں گی۔ شکریہ۔"
+}

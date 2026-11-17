@@ -1,0 +1,12 @@
+{
+  "reminder.title": "अनुस्मारक: $title",
+  "reminder.body": "$title दिनांक $event_date को है। $case_line$message",
+  "reminder.call": "नमस्ते $name। यह $firm की ओर से एक अनुस्मारक है। $title दिनांक $event_date को निर्धारित है। $case_line धन्यवाद।",
+  "reminder.case_line": "मामला: $case_title। ",
+  "case.updated.title": "मामला अपडेट हुआ: $case_title",
+  "case.updated.body": "$count बदलाव मिले: $summary",
+  "hearing.new.title": "अगली सुनवाई: $hearing_date",
+  "hearing.new.body": "$case_title की अगली सुनवाई $hearing_date को सूचीबद्ध है।",
+  "otp.sms": "आपका Court Life लॉगिन कोड $code है। यह $minutes मिनट में समाप्त हो जाएगा। इसे किसी से साझा न करें।",
+  "call.test": "नमस्ते $name। यह Court Life की ओर से एक परीक्षण कॉल है। आपके सुनवाई अनुस्मारक इसी तरह सुनाई देंगे। धन्यवाद।"
+}

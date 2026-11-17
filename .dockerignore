@@ -1,0 +1,14 @@
+# Keep the backend image lean — never ship the frontend, local data or secrets
+cort_ui_frontend/
+.venv/
+.pgdata/
+storage/
+.env
+env.generated
+*.log
+*_log.txt
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+.coverage
+.git/

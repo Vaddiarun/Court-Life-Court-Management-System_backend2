@@ -1,0 +1,10 @@
+{
+  "reminder.title": "நினைவூட்டல்: $title",
+  "reminder.body": "$title $event_date அன்று உள்ளது. $case_line$message",
+  "reminder.call": "வணக்கம் $name. இது $firm வழங்கும் நினைவூட்டல். $title $event_date அன்று திட்டமிடப்பட்டுள்ளது. $case_line நன்றி.",
+  "reminder.case_line": "வழக்கு: $case_title. ",
+  "case.updated.title": "வழக்கு புதுப்பிப்பு: $case_title",
+  "hearing.new.title": "அடுத்த விசாரணை: $hearing_date",
+  "otp.sms": "உங்கள் Court Life உள்நுழைவு குறியீடு $code. இது $minutes நிமிடங்களில் காலாவதியாகும்.",
+  "call.test": "வணக்கம் $name. இது Court Life வழங்கும் சோதனை அழைப்பு. உங்கள் விசாரணை நினைவூட்டல்கள் இப்படித்தான் ஒலிக்கும். நன்றி."
+}

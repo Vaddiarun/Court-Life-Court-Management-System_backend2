@@ -1,0 +1,14 @@
+.env
+__pycache__/
+*.pyc
+.pytest_cache/
+.coverage
+storage/
+.ruff_cache/
+cort_ui_frontend/
+.venv/
+.pgdata/
+env.generated
+*_log.txt
+Claude outputs/
+*.zip
