@@ -2,7 +2,7 @@
 
 import hmac
 
-from fastapi import APIRouter, Form, HTTPException, Query
+from fastapi import APIRouter, Form, Header, HTTPException, Query
 from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel
 
@@ -103,3 +103,33 @@ async def run_sync_now(admin: SuperAdmin, db: DB):
 @router.post("/admin/jobs/dispatch")
 async def run_dispatch_now(admin: SuperAdmin, db: DB):
     return await dispatch_due(db)
+
+
+@router.post("/cron/tick")
+async def cron_tick(
+    db: DB,
+    jobs: str = Query("reminders,collect", description="comma list: reminders, collect, sync"),
+    x_cron_token: str | None = Header(None),
+):
+    """Called by Cloud Scheduler (or any cron) when the API runs without the in-process
+    scheduler, e.g. on Cloud Run with request-based billing. Protected by WEBHOOK_SECRET
+    sent in the X-Cron-Token header.
+      every minute:      jobs=reminders,collect
+      every 15 minutes:  jobs=sync
+    """
+    _check_token(x_cron_token)
+    wanted = {j.strip() for j in jobs.split(",") if j.strip()}
+    unknown = wanted - {"reminders", "collect", "sync"}
+    if unknown:
+        raise HTTPException(422, f"Unknown job(s): {', '.join(sorted(unknown))}")
+    out: dict = {}
+    if "reminders" in wanted:
+        out["reminders"] = await dispatch_due(db)
+        await db.commit()
+    if "sync" in wanted:
+        out["refresh_requested"] = await request_refreshes(db)
+        await db.commit()
+    if "collect" in wanted:
+        out["collected"] = await collect_refreshed(db)
+        await db.commit()
+    return out

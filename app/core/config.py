@@ -111,8 +111,9 @@ class Settings(BaseSettings):
     EMAIL_FROM: str = "no-reply@courtlife.local"
     EMAIL_FROM_NAME: str = "Court Life"
 
-    # Storage: "local" | "s3"
+    # Storage: "local" | "gcs" | "s3"
     STORAGE_BACKEND: str = "local"
+    GCS_BUCKET: str = ""
     LOCAL_STORAGE_DIR: str = "./storage"
     S3_BUCKET: str = ""
     S3_REGION: str = "ap-south-1"

@@ -179,3 +179,18 @@ async def test_exotel_greeting_returns_message(client):
     assert r.text == "Hearing for case ABC tomorrow at 10 AM."
     r = await client.get("/api/v1/webhooks/exotel/greeting", params={"token": "bad", "CustomField": "x"})
     assert r.status_code == 401
+
+
+async def test_cron_tick_requires_token_and_runs_jobs(client):
+    from app.core.config import settings
+
+    url = "/api/v1/cron/tick"
+    assert (await client.post(url)).status_code == 401
+    assert (await client.post(url, headers={"X-Cron-Token": "wrong"})).status_code == 401
+    r = await client.post(url, headers={"X-Cron-Token": settings.WEBHOOK_SECRET})
+    assert r.status_code == 200, r.text
+    assert set(r.json()) == {"reminders", "collected"}
+    r = await client.post(url, params={"jobs": "sync"}, headers={"X-Cron-Token": settings.WEBHOOK_SECRET})
+    assert r.status_code == 200 and "refresh_requested" in r.json()
+    r = await client.post(url, params={"jobs": "nope"}, headers={"X-Cron-Token": settings.WEBHOOK_SECRET})
+    assert r.status_code == 422

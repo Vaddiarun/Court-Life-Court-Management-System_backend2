@@ -10,5 +10,5 @@ cort_ui_frontend/
 .pgdata/
 env.generated
 *_log.txt
-Claude outputs/
-*.zip
+gcp.env.yaml
+.gcp-secrets.json

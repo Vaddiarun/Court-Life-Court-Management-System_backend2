@@ -1,0 +1,18 @@
+# Files NOT uploaded to Cloud Build (keep secrets and local data out of the image)
+.env
+gcp.env.yaml
+.gcp-secrets.json
+.git/
+.gitignore
+.venv/
+.pgdata/
+storage/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+.coverage
+*.log
+*_log.txt
+cort_ui_frontend/
+tests/

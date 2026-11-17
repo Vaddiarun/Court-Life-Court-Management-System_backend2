@@ -163,3 +163,60 @@ def test_settings_accept_host_style_values(monkeypatch):
     assert s.CORS_ORIGINS == ["https://courtlife.vercel.app", "http://localhost:3000"]
     monkeypatch.setenv("CORS_ORIGINS", '["https://a.example"]')
     assert Settings(_env_file=None).CORS_ORIGINS == ["https://a.example"]
+
+
+async def test_gcs_storage_roundtrip(monkeypatch):
+    from app.providers import storage as st
+
+    class Blob:
+        def __init__(self, store, key):
+            self.store, self.key = store, key
+
+        def upload_from_string(self, data, content_type=None):
+            self.store[self.key] = (data, content_type)
+
+        def download_as_bytes(self):
+            return self.store[self.key][0]
+
+        def delete(self):
+            from google.api_core.exceptions import NotFound
+
+            if self.key not in self.store:
+                raise NotFound("gone")
+            del self.store[self.key]
+
+    class Bucket:
+        def __init__(self):
+            self.store = {}
+
+        def blob(self, key):
+            return Blob(self.store, key)
+
+    class Client:
+        def __init__(self):
+            self.b = Bucket()
+
+        def bucket(self, name):
+            assert name == "courtlife-docs"
+            return self.b
+
+    monkeypatch.setattr(settings, "STORAGE_BACKEND", "gcs")
+    monkeypatch.setattr(settings, "GCS_BUCKET", "courtlife-docs")
+    monkeypatch.setattr(st.GcsStorage, "_client", Client())
+    s = st.get_storage()
+    assert isinstance(s, st.GcsStorage)
+    await s.put("t/1/a.pdf", b"%PDF", "application/pdf")
+    assert await s.get("t/1/a.pdf") == b"%PDF"
+    await s.delete("t/1/a.pdf")
+    await s.delete("t/1/a.pdf")  # deleting twice is fine
+    monkeypatch.setattr(st.GcsStorage, "_client", None)
+
+
+def test_cloud_sql_socket_url_is_accepted(monkeypatch):
+    from sqlalchemy.engine import make_url
+
+    monkeypatch.setenv("DATABASE_URL", "postgresql://courtlife:pw@/courtlife?host=/cloudsql/proj:asia-south1:courtlife-db")
+    s = Settings(_env_file=None)
+    url = make_url(s.DATABASE_URL)
+    assert url.drivername == "postgresql+asyncpg"
+    assert url.query["host"] == "/cloudsql/proj:asia-south1:courtlife-db" and url.database == "courtlife"

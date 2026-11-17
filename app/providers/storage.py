@@ -1,4 +1,4 @@
-"""Document storage: local disk for development, S3 (ap-south-1) for production."""
+"""Document storage: local disk for development; Google Cloud Storage or S3 in production."""
 
 import asyncio
 from abc import ABC, abstractmethod
@@ -62,5 +62,40 @@ class S3Storage(Storage):
             await s3.delete_object(Bucket=settings.S3_BUCKET, Key=key)
 
 
+class GcsStorage(Storage):
+    """Google Cloud Storage. On Cloud Run it authenticates as the service's own identity
+    (Application Default Credentials) - no keys to manage."""
+
+    _client = None
+
+    def __init__(self, client=None):
+        if client is not None:
+            GcsStorage._client = client
+        if GcsStorage._client is None:
+            from google.cloud import storage as gcs
+
+            GcsStorage._client = gcs.Client()
+        self.bucket = GcsStorage._client.bucket(settings.GCS_BUCKET)
+
+    async def put(self, key, data, content_type):
+        blob = self.bucket.blob(key)
+        await asyncio.to_thread(blob.upload_from_string, data, content_type=content_type)
+
+    async def get(self, key):
+        return await asyncio.to_thread(self.bucket.blob(key).download_as_bytes)
+
+    async def delete(self, key):
+        from google.api_core.exceptions import NotFound
+
+        try:
+            await asyncio.to_thread(self.bucket.blob(key).delete)
+        except NotFound:
+            pass
+
+
 def get_storage() -> Storage:
-    return S3Storage() if settings.STORAGE_BACKEND == "s3" else LocalStorage()
+    if settings.STORAGE_BACKEND == "gcs":
+        return GcsStorage()
+    if settings.STORAGE_BACKEND == "s3":
+        return S3Storage()
+    return LocalStorage()
