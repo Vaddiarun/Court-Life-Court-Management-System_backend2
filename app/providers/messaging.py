@@ -125,6 +125,17 @@ class ExotelVoiceProvider(VoiceProvider):
     name = "exotel"
 
     async def place_call(self, to_phone, message, language, reference):
+        from app.core.db import SessionLocal
+        from app.models import VoiceMessage
+
+        # Exotel limits CustomField (128 chars), so the script is stored and only its id is sent;
+        # the Greeting applet's URL (/webhooks/exotel/greeting) reads it back during the call.
+        async with SessionLocal() as s:
+            vm = VoiceMessage(language=language or "en", text=message)
+            s.add(vm)
+            await s.commit()
+            vm_id = vm.id
+
         url = (
             f"https://{settings.EXOTEL_API_KEY}:{settings.EXOTEL_API_TOKEN}@{settings.EXOTEL_SUBDOMAIN}"
             f"/v1/Accounts/{settings.EXOTEL_ACCOUNT_SID}/Calls/connect.json"
@@ -134,7 +145,7 @@ class ExotelVoiceProvider(VoiceProvider):
             "CallerId": settings.EXOTEL_CALLER_ID,
             "Url": settings.EXOTEL_FLOW_URL,
             "CallType": "trans",
-            "CustomField": f"{reference}|{language}|{message}"[:1000],
+            "CustomField": f"vm:{vm_id}",
         }
         if settings.PUBLIC_BASE_URL:
             data["StatusCallback"] = (
@@ -143,8 +154,14 @@ class ExotelVoiceProvider(VoiceProvider):
         async with httpx.AsyncClient(timeout=20) as client:
             resp = await client.post(url, data=data)
         if resp.status_code >= 400:
-            raise ChannelError(f"Exotel {resp.status_code}: {resp.text[:200]}")
+            raise ChannelError(f"Exotel {resp.status_code}: {resp.text[:300]}")
         sid = resp.json().get("Call", {}).get("Sid", "")
+        if sid:
+            async with SessionLocal() as s:
+                row = await s.get(VoiceMessage, vm_id)
+                if row:
+                    row.call_sid = sid
+                    await s.commit()
         return CallResult(sid, "queued")
 
 

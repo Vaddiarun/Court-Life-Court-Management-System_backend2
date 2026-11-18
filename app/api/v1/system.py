@@ -1,14 +1,17 @@
 """Metadata, provider webhooks and operator job triggers."""
 
 import hmac
+import uuid
 
 from fastapi import APIRouter, Form, Header, HTTPException, Query
 from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel
+from sqlalchemy import select
 
 from app.api.deps import DB, SuperAdmin
 from app.core.config import settings
 from app.i18n import LANGUAGES, translations_available
+from app.models import VoiceMessage
 from app.models.enums import Channel, DocumentCategory, ReminderType, Role
 from app.providers.court.base import is_valid_cnr, normalize_cnr
 from app.services.reminders import dispatch_due, handle_call_status
@@ -53,13 +56,28 @@ async def exotel_call_status(
 
 
 @router.get("/webhooks/exotel/greeting", response_class=PlainTextResponse)
-async def exotel_greeting(token: str = Query(...), CustomField: str = Query("")):
-    """Exotel flow 'Greeting' applet (dynamic text) fetches this URL; we return the
-    reminder text to speak. CustomField is 'reference|language|message' as set when
-    the call was placed."""
+async def exotel_greeting(
+    db: DB,
+    token: str = Query(...),
+    CustomField: str = Query(""),
+    CallSid: str = Query(""),
+):
+    """Exotel flow 'Greeting' applet (dynamic text) fetches this URL; we return the text to
+    speak. The call carries CustomField 'vm:<id>'; CallSid is the fallback lookup."""
     _check_token(token)
-    parts = CustomField.split("|", 2)
-    text = parts[2] if len(parts) == 3 else ""
+    text = ""
+    row = None
+    if CustomField.startswith("vm:"):
+        try:
+            row = await db.get(VoiceMessage, uuid.UUID(CustomField[3:].strip()))
+        except ValueError:
+            row = None
+    if row is None and CallSid:
+        row = (await db.execute(select(VoiceMessage).where(VoiceMessage.call_sid == CallSid))).scalars().first()
+    if row is not None:
+        text = row.text
+    elif CustomField.count("|") >= 2:  # older calls: 'reference|language|message'
+        text = CustomField.split("|", 2)[2]
     return text or "This is a reminder from Court Life. Please check the app for details."
 
 

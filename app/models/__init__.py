@@ -286,6 +286,17 @@ class NotificationJob(IdMixin, Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 
+class VoiceMessage(IdMixin, Base):
+    """Text an outbound call should speak. Providers that fetch the script during the call
+    (Exotel's Greeting applet) receive only this row's short id, then read the text back."""
+
+    __tablename__ = "voice_messages"
+    call_sid: Mapped[str | None] = mapped_column(String(100), index=True)
+    language: Mapped[str] = mapped_column(String(10), default="en")
+    text: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
 class CallAttempt(IdMixin, Base):
     __tablename__ = "call_attempts"
     tenant_id: Mapped[uuid.UUID] = mapped_column(ForeignKey(TENANT_FK, ondelete="CASCADE"), index=True)

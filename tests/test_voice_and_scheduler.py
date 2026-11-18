@@ -194,3 +194,49 @@ async def test_cron_tick_requires_token_and_runs_jobs(client):
     assert r.status_code == 200 and "refresh_requested" in r.json()
     r = await client.post(url, params={"jobs": "nope"}, headers={"X-Cron-Token": settings.WEBHOOK_SECRET})
     assert r.status_code == 422
+
+
+async def test_exotel_call_sends_short_customfield_and_greeting_reads_it(client, Session, monkeypatch):
+    """Exotel caps CustomField at 128 chars: we send 'vm:<id>' and the Greeting URL reads the text back."""
+    import json as _json
+
+    import httpx
+
+    from app.core.config import settings
+    from app.providers import messaging
+    from app.providers.messaging import ExotelVoiceProvider
+
+    import app.core.db as core_db
+
+    monkeypatch.setattr(core_db, "SessionLocal", Session)
+    sent = {}
+
+    def handler(req: httpx.Request):
+        from urllib.parse import parse_qs
+
+        sent.update({k: v[0] for k, v in parse_qs(req.content.decode()).items()})
+        return httpx.Response(200, content=_json.dumps({"Call": {"Sid": "exo-sid-123", "Status": "in-progress"}}))
+
+    real = httpx.AsyncClient
+    monkeypatch.setattr(messaging.httpx, "AsyncClient", lambda **kw: real(transport=httpx.MockTransport(handler)))
+    for k, v in {
+        "EXOTEL_API_KEY": "k",
+        "EXOTEL_API_TOKEN": "t",
+        "EXOTEL_ACCOUNT_SID": "acct",
+        "EXOTEL_CALLER_ID": "09513886363",
+        "EXOTEL_FLOW_URL": "http://my.exotel.com/acct/exoml/start_voice/1",
+    }.items():
+        monkeypatch.setattr(settings, k, v)
+    long_msg = "Reminder: your case OS 12 of 2024 is listed tomorrow at 10:30 AM before the Principal Junior Civil Judge. " * 3
+    res = await ExotelVoiceProvider().place_call("+919030158713", long_msg, "en", "job-1")
+    assert res.call_id == "exo-sid-123"
+    assert sent["CustomField"].startswith("vm:") and len(sent["CustomField"]) <= 128
+    assert sent["From"] == "+919030158713" and sent["CallerId"] == "09513886363"
+
+    tok = settings.WEBHOOK_SECRET
+    r = await client.get("/api/v1/webhooks/exotel/greeting", params={"token": tok, "CustomField": sent["CustomField"]})
+    assert r.status_code == 200 and r.text == long_msg
+    r = await client.get("/api/v1/webhooks/exotel/greeting", params={"token": tok, "CallSid": "exo-sid-123"})
+    assert r.text == long_msg
+    r = await client.get("/api/v1/webhooks/exotel/greeting", params={"token": tok, "CustomField": "vm:not-a-uuid"})
+    assert "reminder from Court Life" in r.text
